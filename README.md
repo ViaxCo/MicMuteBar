@@ -83,12 +83,13 @@ swift build
 
 ```bash
 ./scripts/package_app.sh
-open dist/MicMuteBar.app
+open /Applications/MicMuteBar.app
 ```
 
 The packaging script builds a release binary with SwiftPM and bundles it as:
 
-- `dist/MicMuteBar.app`
+- `dist/MicMuteBar.app` (staging bundle)
+- `/Applications/MicMuteBar.app` (auto-installed by default if writable)
 
 ## Launch at Login
 

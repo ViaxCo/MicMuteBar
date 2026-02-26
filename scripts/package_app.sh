@@ -9,6 +9,8 @@ CODESIGN_IDENTITY="${CODESIGN_IDENTITY:--}"
 OUTPUT_DIR="${OUTPUT_DIR:-dist}"
 CLANG_MODULE_CACHE_PATH="${CLANG_MODULE_CACHE_PATH:-$PWD/.build/clang-module-cache}"
 SWIFTPM_MODULECACHE_OVERRIDE="${SWIFTPM_MODULECACHE_OVERRIDE:-$PWD/.build/swiftpm-module-cache}"
+INSTALL_TO_APPLICATIONS="${INSTALL_TO_APPLICATIONS:-1}"
+INSTALL_DIR="${INSTALL_DIR:-/Applications}"
 
 mkdir -p "$CLANG_MODULE_CACHE_PATH" "$SWIFTPM_MODULECACHE_OVERRIDE"
 
@@ -65,9 +67,29 @@ EOF
 echo "Signing app with identity: $CODESIGN_IDENTITY"
 codesign --force --deep --sign "$CODESIGN_IDENTITY" "$APP_PATH"
 
+INSTALLED_APP_PATH="$INSTALL_DIR/$APP_NAME.app"
+if [[ "$INSTALL_TO_APPLICATIONS" == "1" ]]; then
+  echo "Installing app bundle to $INSTALL_DIR..."
+  if mkdir -p "$INSTALL_DIR" 2>/dev/null && rm -rf "$INSTALLED_APP_PATH" 2>/dev/null && cp -R "$APP_PATH" "$INSTALLED_APP_PATH" 2>/dev/null; then
+    echo "Installed:"
+    echo "  $INSTALLED_APP_PATH"
+  else
+    echo "Warning: could not install to $INSTALL_DIR (permission denied or app in use)."
+    echo "You can install manually with:"
+    echo "  cp -R \"$APP_PATH\" \"$INSTALLED_APP_PATH\""
+    echo "Or disable auto-install with:"
+    echo "  INSTALL_TO_APPLICATIONS=0 ./scripts/package_app.sh"
+  fi
+fi
+
 echo
 echo "Done:"
 echo "  $APP_PATH"
 echo
-echo "Launch with:"
-echo "  open \"$APP_PATH\""
+if [[ "$INSTALL_TO_APPLICATIONS" == "1" && -d "$INSTALLED_APP_PATH" ]]; then
+  echo "Launch installed app with:"
+  echo "  open \"$INSTALLED_APP_PATH\""
+else
+  echo "Launch with:"
+  echo "  open \"$APP_PATH\""
+fi
