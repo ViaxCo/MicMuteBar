@@ -69,6 +69,10 @@ final class MicMuteController {
         return "System Default"
     }
 
+    var defaultInputDeviceUID: String? {
+        availableDevices.first(where: { $0.isDefault })?.uid
+    }
+
     func start() {
         guard !hasStarted else { return }
         hasStarted = true
@@ -82,6 +86,20 @@ final class MicMuteController {
     func setSelectedDeviceUID(_ uid: String?) {
         preferences.selectedDeviceUID = uid?.isEmpty == true ? nil : uid
         refreshState()
+    }
+
+    func setDefaultInputDeviceUID(_ uid: String?) {
+        guard let uid else { return }
+
+        do {
+            try muteService.setDefaultInputDevice(uid: uid)
+            refreshState()
+            lastErrorMessage = nil
+        } catch {
+            refreshState()
+            lastErrorMessage = error.localizedDescription
+            toastPresenter.showError(error.localizedDescription)
+        }
     }
 
     func setMuteAllCapableInputDevices(_ enabled: Bool) {

@@ -3,6 +3,7 @@ import Foundation
 
 enum CoreAudioMuteError: LocalizedError {
     case noDefaultInputDevice
+    case inputDeviceNotFound(String)
     case inputMuteNotSupported(String)
     case muteWriteHadNoEffect(String)
     case osStatus(OSStatus, String)
@@ -11,6 +12,8 @@ enum CoreAudioMuteError: LocalizedError {
         switch self {
         case .noDefaultInputDevice:
             return "No default input device is available."
+        case .inputDeviceNotFound(let deviceUID):
+            return "Input device '\(deviceUID)' is no longer available."
         case .inputMuteNotSupported(let deviceName):
             return "Input device '\(deviceName)' does not expose a mutable CoreAudio mute control."
         case .muteWriteHadNoEffect(let deviceName):
@@ -83,6 +86,33 @@ struct CoreAudioInputMuteService {
                 return lhs.isDefault && !rhs.isDefault
             }
             return lhs.name.localizedStandardCompare(rhs.name) == .orderedAscending
+        }
+    }
+
+    func setDefaultInputDevice(uid: String) throws {
+        guard let deviceID = try findInputDeviceID(uid: uid) else {
+            throw CoreAudioMuteError.inputDeviceNotFound(uid)
+        }
+
+        var nextDefaultID = deviceID
+        let size = UInt32(MemoryLayout<AudioDeviceID>.size)
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioHardwarePropertyDefaultInputDevice,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+
+        let status = AudioObjectSetPropertyData(
+            AudioObjectID(kAudioObjectSystemObject),
+            &address,
+            0,
+            nil,
+            size,
+            &nextDefaultID
+        )
+
+        guard status == noErr else {
+            throw CoreAudioMuteError.osStatus(status, "Setting default input device")
         }
     }
 

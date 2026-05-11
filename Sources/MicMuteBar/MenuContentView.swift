@@ -18,6 +18,13 @@ struct MenuContentView: View {
                 controller.refreshState()
             }
 
+            Picker("System Input", selection: defaultInputBinding) {
+                ForEach(controller.availableDevices) { device in
+                    Text(device.displayName).tag(Optional(device.uid))
+                }
+            }
+            .disabled(controller.availableDevices.isEmpty)
+
             Divider()
 
             Text(controller.statusLine)
@@ -25,7 +32,7 @@ struct MenuContentView: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Text("Selection: \(controller.selectedDeviceLabel)")
+            Text("Mute target: \(controller.selectedDeviceLabel)")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -86,6 +93,13 @@ struct MenuContentView: View {
         Binding(
             get: { launchAtLogin.isEnabled },
             set: { launchAtLogin.setEnabled($0) }
+        )
+    }
+
+    private var defaultInputBinding: Binding<String?> {
+        Binding(
+            get: { controller.defaultInputDeviceUID },
+            set: { controller.setDefaultInputDeviceUID($0) }
         )
     }
 
